@@ -10,6 +10,7 @@ script = ExtResource("1_ctrah")
 
 [node name="HeadCollider" type="Area2D" parent="."]
 unique_name_in_owner = true
+monitorable = false
 
 [node name="HeadCollisionShape" type="CollisionShape2D" parent="HeadCollider"]
 shape = SubResource("CircleShape2D_o6mmo")
