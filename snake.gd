@@ -11,17 +11,7 @@ func _ready() -> void:
 	data.changed.connect(on_data_changed)
 	data.died.connect(on_death)
 	head_collider.area_entered.connect(on_head_entered_area)
-	data.segments = [
-		Vector2i(5,5),
-		Vector2i(5,6),
-		Vector2i(5,7),
-		Vector2i(4,7),
-		Vector2i(3,7),
-		Vector2i(2,7),
-		Vector2i(2,6),
-		Vector2i(2,5),
-		Vector2i(1,5),
-	]
+	data.segments = [Vector2i.ZERO]
 	data.facing_direction = Vector2i.RIGHT
 	on_data_changed()
 
@@ -58,6 +48,9 @@ func input_facing_direction(event : InputEvent) -> void:
 		# Update facing direction
 		data.facing_direction = dir
 
+func kill() -> void:
+	data.kill()
+
 func _draw() -> void:
 	draw_head()
 	draw_body()
@@ -81,7 +74,7 @@ func draw_tail() -> void:
 func on_data_changed() -> void:
 	head_collider.position = Grid.CELL_SIZE * Vector2(data.segments[0])
 	queue_redraw()
-	
+
 func on_death() -> void:
 	pass
 

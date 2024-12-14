@@ -12,7 +12,9 @@ var grid_objects : Array[GridObject] = []
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	game_tick_timer.timeout.connect(snake.data.on_time_tick)
+	snake.data.segments = [Vector2i(5, 5)]
 	snake.data.died.connect(on_snake_death.bind(snake))
+	snake.data.moved.connect(on_snake_moved.bind(snake))
 	add_food()
 
 func on_snake_death(_snake : Snake) -> void:
@@ -37,6 +39,17 @@ func is_cell_empty(cell_pos : Vector2i) -> bool:
 			return false
 	return true
 
+func is_position_valid(pos : Vector2i) -> bool:
+	if pos.x < 0:
+		return false
+	if pos.y < 0:
+		return false
+	if pos.x > GRID_SIZE.x:
+		return false
+	if pos.y > GRID_SIZE.y:
+		return false
+	return true
+
 func add_food() -> void:
 	var rand_pos := Vector2i(randi_range(0, GRID_SIZE.x - 1), randi_range(0, GRID_SIZE.y - 1))
 	while not is_cell_empty(rand_pos):
@@ -54,3 +67,7 @@ func remove_grid_object(grid_object : GridObject) -> void:
 func on_food_eaten(food : Food) -> void:
 	remove_grid_object(food)
 	add_food.call_deferred()
+
+func on_snake_moved(snake : Snake) -> void:
+	if not is_position_valid(snake.data.head):
+		snake.kill()

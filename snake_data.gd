@@ -7,7 +7,14 @@ var facing_direction : Vector2i:
 		facing_direction = value
 		emit_changed()
 
+var head : Vector2i:
+	set(value):
+		pass
+	get():
+		return segments[0]
+
 signal died
+signal moved
 
 func move() -> void:
 	segments.pop_back()
@@ -15,6 +22,7 @@ func move() -> void:
 	var new_head_pos := head_pos + facing_direction
 	segments.insert(0, new_head_pos)
 	emit_changed()
+	moved.emit()
 	if is_eating_self():
 		died.emit()
 
@@ -33,3 +41,6 @@ func is_eating_self() -> bool:
 
 func on_time_tick() -> void:
 	move()
+
+func kill() -> void:
+	died.emit()
