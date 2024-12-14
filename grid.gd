@@ -4,16 +4,18 @@ extends Node
 const CELL_SIZE : int = 32
 const GRID_SIZE : Vector2i = Vector2i(16, 16)
 
+var grid_objects : Array[GridObject] = []
+
 @onready var game_tick_timer: Timer = %GameTickTimer
 @onready var snake: Snake = %Snake
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	game_tick_timer.timeout.connect(snake.data.on_time_tick)
-	game_tick_timer.timeout.connect(add_food)
 	snake.data.died.connect(on_snake_death.bind(snake))
+	add_food()
 
-func on_snake_death(_snake : SnakeData) -> void:
+func on_snake_death(_snake : Snake) -> void:
 	game_tick_timer.stop()
 
 func is_every_cell_filled() -> bool:
@@ -28,6 +30,11 @@ func is_cell_empty(cell_pos : Vector2i) -> bool:
 		for segment : Vector2i in snake.data.segments:
 			if cell_pos == segment:
 				return false
+	for grid_object in grid_objects:
+		if not is_instance_valid(grid_object):
+			grid_objects.erase(grid_object)
+		elif cell_pos == grid_object.grid_position:
+			return false
 	return true
 
 func add_food() -> void:
@@ -36,5 +43,14 @@ func add_food() -> void:
 		rand_pos = Vector2i(randi_range(0, GRID_SIZE.x - 1), randi_range(0, GRID_SIZE.y - 1))
 	
 	var new_food := Food.create()
+	grid_objects.append(new_food)
+	new_food.grid_position = rand_pos
 	add_child(new_food)
-	new_food.position = rand_pos * CELL_SIZE
+	new_food.tree_exiting.connect(on_food_eaten.bind(new_food))
+
+func remove_grid_object(grid_object : GridObject) -> void:
+	grid_objects.erase(grid_object)
+
+func on_food_eaten(food : Food) -> void:
+	remove_grid_object(food)
+	add_food.call_deferred()

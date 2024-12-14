@@ -1,16 +1,15 @@
 class_name Food
-extends Node2D
+extends GridObject
 
 const SCENE = preload("res://food.tscn")
+
+signal eaten
 
 static func create() -> Food:
 	return SCENE.instantiate()
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	pass # Replace with function body.
+	queue_redraw()
 
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+func _draw() -> void:
+	draw_circle(Vector2.ZERO, Grid.CELL_SIZE * 0.25, Color.CRIMSON)

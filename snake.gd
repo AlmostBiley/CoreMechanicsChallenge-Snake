@@ -1,8 +1,6 @@
 class_name Snake
 extends Node2D
 
-const BODY_SCALE : int = Grid.CELL_SIZE
-
 var data : SnakeData
 
 @onready var head_collider: Area2D = %HeadCollider
@@ -12,6 +10,7 @@ func _ready() -> void:
 	data = SnakeData.new()
 	data.changed.connect(on_data_changed)
 	data.died.connect(on_death)
+	head_collider.area_entered.connect(on_head_entered_area)
 	data.segments = [
 		Vector2i(5,5),
 		Vector2i(5,6),
@@ -65,23 +64,29 @@ func _draw() -> void:
 	draw_tail()
 
 func draw_head() -> void:
-	var head_pos := BODY_SCALE * Vector2(data.segments[0])
-	var head_tip := head_pos + BODY_SCALE * 0.5 * Vector2(data.facing_direction)
-	draw_line(head_pos, head_tip, Color.FOREST_GREEN, 0.5 * BODY_SCALE)
+	var head_pos := Grid.CELL_SIZE * Vector2(data.segments[0])
+	var head_tip := head_pos + Grid.CELL_SIZE * 0.5 * Vector2(data.facing_direction)
+	draw_line(head_pos, head_tip, Color.FOREST_GREEN, 0.5 * Grid.CELL_SIZE)
 
 func draw_body() -> void:
 	var body_segments : PackedVector2Array = []
 	for segment in data.segments:
-		var body_segment := BODY_SCALE * Vector2(segment)
+		var body_segment := Grid.CELL_SIZE * Vector2(segment)
 		body_segments.append(body_segment)
-	draw_polyline(body_segments, Color.FOREST_GREEN, 0.4 * BODY_SCALE)
+	draw_polyline(body_segments, Color.FOREST_GREEN, 0.4 * Grid.CELL_SIZE)
 
 func draw_tail() -> void:
 	pass
 
 func on_data_changed() -> void:
-	head_collider.position = BODY_SCALE * Vector2(data.segments[0])
+	head_collider.position = Grid.CELL_SIZE * Vector2(data.segments[0])
 	queue_redraw()
 	
 func on_death() -> void:
+	pass
+
+func on_head_entered_area(area : Area2D) -> void:
+	if area is Food:
+		var food : Food = area
+		data.eat(food)
 	pass

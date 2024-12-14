@@ -18,6 +18,12 @@ func move() -> void:
 	if is_eating_self():
 		died.emit()
 
+func eat(food : Food) -> void:
+	food.queue_free()
+	var tail_pos := segments[-1]
+	segments.append(tail_pos)
+	segments.append(tail_pos)
+
 func is_eating_self() -> bool:
 	var head_pos := segments[0]
 	for i in range(1, segments.size()):
