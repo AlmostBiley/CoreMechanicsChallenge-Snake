@@ -1,31 +1,38 @@
 class_name Snake
-extends Node2D
+extends Resource
 
-var data : SnakeData
+const COLOR : Color = Color(0, 0.744, 0.371)
 
-@onready var head_collider: Area2D = %HeadCollider
+var segments : Array[Vector2i] = [Vector2i.ZERO]
+var facing_direction : Vector2i:
+	set(value):
+		facing_direction = value
+		#emit_changed()
 
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-	data = SnakeData.new()
-	data.changed.connect(on_data_changed)
-	data.died.connect(on_death)
-	head_collider.area_entered.connect(on_head_entered_area)
-	data.segments = [Vector2i.ZERO]
-	data.facing_direction = Vector2i.RIGHT
-	on_data_changed()
+var head : Vector2i:
+	set(value):
+		pass
+	get():
+		return segments[0]
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("move"):
-		input_facing_direction(event)
+var alive : bool = true
+
+signal died
+signal moved
+
+func _init() -> void:
+	var grid_center := (SnakeGame.GRID_MIN + SnakeGame.GRID_MAX) / 2 
+	var grid_left := Vector2i(SnakeGame.GRID_MIN.x, grid_center.y)
+	segments = [grid_left + Vector2i.RIGHT, grid_left]
+	facing_direction = Vector2i.RIGHT
 
 func input_facing_direction(event : InputEvent) -> void:
-	var dir := data.facing_direction
+	var dir := facing_direction
 	
 	# Get neck
 	var neck_dir : Vector2i
-	if data.segments.size() >= 2:
-		neck_dir = data.segments[1] - data.segments[0]
+	if segments.size() >= 2:
+		neck_dir = segments[1] - segments[0]
 	
 	# Get input direction
 	if event.is_action_pressed("move_down"):
@@ -38,7 +45,7 @@ func input_facing_direction(event : InputEvent) -> void:
 		dir = Vector2i.UP
 	
 	# Set direction
-	if dir == data.facing_direction:
+	if dir == facing_direction:
 		# Do nothing
 		pass
 	elif dir == neck_dir:
@@ -46,40 +53,54 @@ func input_facing_direction(event : InputEvent) -> void:
 		pass
 	else:
 		# Update facing direction
-		data.facing_direction = dir
+		facing_direction = dir
+
+func move() -> void:
+	segments.pop_back()
+	var head_pos := segments[0]
+	var new_head_pos := head_pos + facing_direction
+	segments.insert(0, new_head_pos)
+	emit_changed()
+	moved.emit()
+	if is_eating_self():
+		kill()
+
+func eat(food : Food) -> void:
+	var tail_pos := segments[-1]
+	segments.append(tail_pos)
+	segments.append(tail_pos)
+
+func is_eating_self() -> bool:
+	var head_pos := segments[0]
+	for i in range(1, segments.size()):
+		if head_pos == segments[i]:
+			return true
+	return false
 
 func kill() -> void:
-	data.kill()
+	alive = false
+	died.emit()
 
-func _draw() -> void:
-	draw_head()
-	draw_body()
-	draw_tail()
+func on_game_tick() -> void:
+	if alive:
+		move()
 
-func draw_head() -> void:
-	var head_pos := Grid.CELL_SIZE * Vector2(data.segments[0])
-	var head_tip := head_pos + Grid.CELL_SIZE * 0.5 * Vector2(data.facing_direction)
-	draw_line(head_pos, head_tip, Color.FOREST_GREEN, 0.5 * Grid.CELL_SIZE)
+func draw(canvas_item : CanvasItem) -> void:
+	draw_head(canvas_item)
+	draw_body(canvas_item)
+	draw_tail(canvas_item)
 
-func draw_body() -> void:
-	var body_segments : PackedVector2Array = []
-	for segment in data.segments:
-		var body_segment := Grid.CELL_SIZE * Vector2(segment)
-		body_segments.append(body_segment)
-	draw_polyline(body_segments, Color.FOREST_GREEN, 0.4 * Grid.CELL_SIZE)
+func draw_head(canvas_item : CanvasItem) -> void:
+	var head_pos := SnakeGame.CELL_SIZE * Vector2(segments[0])
+	var head_tip := head_pos + SnakeGame.CELL_SIZE * 0.5 * Vector2(facing_direction)
+	canvas_item.draw_line(head_pos, head_tip, COLOR, 0.5 * SnakeGame.CELL_SIZE)
 
-func draw_tail() -> void:
-	pass
+func draw_body(canvas_item : CanvasItem) -> void:
+	var draw_segments : PackedVector2Array = []
+	for segment in segments:
+		var draw_segment := SnakeGame.CELL_SIZE * Vector2(segment)
+		draw_segments.append(draw_segment)
+	canvas_item.draw_polyline(draw_segments, COLOR, 0.4 * SnakeGame.CELL_SIZE)
 
-func on_data_changed() -> void:
-	head_collider.position = Grid.CELL_SIZE * Vector2(data.segments[0])
-	queue_redraw()
-
-func on_death() -> void:
-	pass
-
-func on_head_entered_area(area : Area2D) -> void:
-	if area is Food:
-		var food : Food = area
-		data.eat(food)
+func draw_tail(canvas_item : CanvasItem) -> void:
 	pass
