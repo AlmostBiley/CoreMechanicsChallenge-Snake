@@ -1,24 +1,46 @@
-class_name Grid
-extends Node
+class_name SnakeGame
+extends Node2D
 
 const CELL_SIZE : int = 32
 const GRID_SIZE : Vector2i = Vector2i(16, 16)
 
 var grid_objects : Array[GridObject] = []
+var snake : Snake
+var tick_length := 0.25
+var pause : bool = false
+var tick_progress := 0.0
 
-@onready var game_tick_timer: Timer = %GameTickTimer
-@onready var snake: Snake = %Snake
+signal unpaused
+signal tick
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	game_tick_timer.timeout.connect(snake.data.on_time_tick)
-	snake.data.segments = [Vector2i(5, 5)]
-	snake.data.died.connect(on_snake_death.bind(snake))
-	snake.data.moved.connect(on_snake_moved.bind(snake))
+	snake = Snake.new()
+	snake.died.connect(on_snake_death.bind(snake))
+	snake.moved.connect(on_snake_moved.bind(snake))
+	snake.changed.connect(draw_game)
+	tick.connect(on_game_tick)
+	tick.connect(snake.on_game_tick)
 	add_food()
+	on_game_tick()
+	
+
+#func _process(delta: float) -> void:
+	#tick_progress += delta
+	#if tick_progress >= tick_length:
+		#tick_progress -= tick_length
+		#tick.emit()
+
+func _draw() -> void:
+	snake.draw(self)
+	for grid_object in grid_objects:
+		grid_object.draw(self)
+
+func draw_game() -> void:
+	queue_redraw()
 
 func on_snake_death(_snake : Snake) -> void:
-	game_tick_timer.stop()
+	pass
 
 func is_every_cell_filled() -> bool:
 	for x in range(GRID_SIZE.x):
@@ -29,7 +51,7 @@ func is_every_cell_filled() -> bool:
 
 func is_cell_empty(cell_pos : Vector2i) -> bool:
 	if snake:
-		for segment : Vector2i in snake.data.segments:
+		for segment : Vector2i in snake.segments:
 			if cell_pos == segment:
 				return false
 	for grid_object in grid_objects:
@@ -55,19 +77,24 @@ func add_food() -> void:
 	while not is_cell_empty(rand_pos):
 		rand_pos = Vector2i(randi_range(0, GRID_SIZE.x - 1), randi_range(0, GRID_SIZE.y - 1))
 	
-	var new_food := Food.create()
+	var new_food := Food.new()
 	grid_objects.append(new_food)
 	new_food.grid_position = rand_pos
-	add_child(new_food)
-	new_food.tree_exiting.connect(on_food_eaten.bind(new_food))
+	new_food.eaten.connect(on_food_eaten.bind(new_food))
 
 func remove_grid_object(grid_object : GridObject) -> void:
 	grid_objects.erase(grid_object)
 
 func on_food_eaten(food : Food) -> void:
 	remove_grid_object(food)
-	add_food.call_deferred()
+	add_food()
 
 func on_snake_moved(snake : Snake) -> void:
-	if not is_position_valid(snake.data.head):
+	if not is_position_valid(snake.head):
 		snake.kill()
+
+func on_game_tick() -> void:
+	if pause:
+		await unpaused
+	var timer := get_tree().create_timer(tick_length)
+	timer.timeout.connect(tick.emit)
