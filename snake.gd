@@ -55,7 +55,6 @@ func input_facing_direction(event : InputEvent) -> void:
 		# Update facing direction
 		facing_direction = dir
 
-
 func move() -> void:
 	segments.pop_back()
 	var head_pos := segments[0]
@@ -78,12 +77,13 @@ func is_eating_self() -> bool:
 			return true
 	return false
 
-func on_game_tick() -> void:
-	move()
-
 func kill() -> void:
 	alive = false
 	died.emit()
+
+func on_game_tick() -> void:
+	if alive:
+		move()
 
 func draw(canvas_item : CanvasItem) -> void:
 	draw_head(canvas_item)
@@ -94,7 +94,6 @@ func draw_head(canvas_item : CanvasItem) -> void:
 	var head_pos := SnakeGame.CELL_SIZE * Vector2(segments[0])
 	var head_tip := head_pos + SnakeGame.CELL_SIZE * 0.5 * Vector2(facing_direction)
 	canvas_item.draw_line(head_pos, head_tip, COLOR, 0.5 * SnakeGame.CELL_SIZE)
-	#canvas_item.draw_circle(head_pos, SnakeGame.CELL_SIZE * 0.4, COLOR)
 
 func draw_body(canvas_item : CanvasItem) -> void:
 	var draw_segments : PackedVector2Array = []
