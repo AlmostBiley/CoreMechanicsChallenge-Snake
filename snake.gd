@@ -1,11 +1,13 @@
 class_name Snake
 extends Resource
 
+const COLOR : Color = Color(0, 0.744, 0.371)
+
 var segments : Array[Vector2i] = [Vector2i.ZERO]
 var facing_direction : Vector2i:
 	set(value):
 		facing_direction = value
-		emit_changed()
+		#emit_changed()
 
 var head : Vector2i:
 	set(value):
@@ -13,12 +15,46 @@ var head : Vector2i:
 	get():
 		return segments[0]
 
+var alive : bool = true
+
 signal died
 signal moved
 
 func _init() -> void:
-	segments = [Vector2i(5, 5),	Vector2i(5, 6)]
+	var grid_center := (SnakeGame.GRID_MIN + SnakeGame.GRID_MAX) / 2 
+	var grid_left := Vector2i(SnakeGame.GRID_MIN.x, grid_center.y)
+	segments = [grid_left + Vector2i.RIGHT, grid_left]
 	facing_direction = Vector2i.RIGHT
+
+func input_facing_direction(event : InputEvent) -> void:
+	var dir := facing_direction
+	
+	# Get neck
+	var neck_dir : Vector2i
+	if segments.size() >= 2:
+		neck_dir = segments[1] - segments[0]
+	
+	# Get input direction
+	if event.is_action_pressed("move_down"):
+		dir = Vector2i.DOWN
+	elif event.is_action_pressed("move_left"):
+		dir = Vector2i.LEFT
+	elif event.is_action_pressed("move_right"):
+		dir = Vector2i.RIGHT
+	elif event.is_action_pressed("move_up"):
+		dir = Vector2i.UP
+	
+	# Set direction
+	if dir == facing_direction:
+		# Do nothing
+		pass
+	elif dir == neck_dir:
+		# Do nothing
+		pass
+	else:
+		# Update facing direction
+		facing_direction = dir
+
 
 func move() -> void:
 	segments.pop_back()
@@ -28,7 +64,7 @@ func move() -> void:
 	emit_changed()
 	moved.emit()
 	if is_eating_self():
-		died.emit()
+		kill()
 
 func eat(food : Food) -> void:
 	var tail_pos := segments[-1]
@@ -46,6 +82,7 @@ func on_game_tick() -> void:
 	move()
 
 func kill() -> void:
+	alive = false
 	died.emit()
 
 func draw(canvas_item : CanvasItem) -> void:
@@ -56,14 +93,15 @@ func draw(canvas_item : CanvasItem) -> void:
 func draw_head(canvas_item : CanvasItem) -> void:
 	var head_pos := SnakeGame.CELL_SIZE * Vector2(segments[0])
 	var head_tip := head_pos + SnakeGame.CELL_SIZE * 0.5 * Vector2(facing_direction)
-	canvas_item.draw_line(head_pos, head_tip, Color.FOREST_GREEN, 0.5 * SnakeGame.CELL_SIZE)
+	canvas_item.draw_line(head_pos, head_tip, COLOR, 0.5 * SnakeGame.CELL_SIZE)
+	#canvas_item.draw_circle(head_pos, SnakeGame.CELL_SIZE * 0.4, COLOR)
 
 func draw_body(canvas_item : CanvasItem) -> void:
 	var draw_segments : PackedVector2Array = []
 	for segment in segments:
 		var draw_segment := SnakeGame.CELL_SIZE * Vector2(segment)
 		draw_segments.append(draw_segment)
-	canvas_item.draw_polyline(draw_segments, Color.FOREST_GREEN, 0.4 * SnakeGame.CELL_SIZE)
+	canvas_item.draw_polyline(draw_segments, COLOR, 0.4 * SnakeGame.CELL_SIZE)
 
 func draw_tail(canvas_item : CanvasItem) -> void:
 	pass

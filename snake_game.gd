@@ -2,49 +2,95 @@ class_name SnakeGame
 extends Node2D
 
 const CELL_SIZE : int = 32
-const GRID_SIZE : Vector2i = Vector2i(16, 16)
+const GRID_MIN : Vector2i = Vector2i(3, 3)
+const GRID_MAX : Vector2i = Vector2i(12, 12)
+const GRID_COLOR_1 := Color(0.352, 0.301, 0.47)
+const GRID_COLOR_2 := Color(0.279, 0.211, 0.39)
 
 var grid_objects : Array[GridObject] = []
 var snake : Snake
 var tick_length := 0.25
-var pause : bool = false
+var pause : bool:
+	set(value):
+		pause = value
+		if not pause:
+			unpaused.emit()
+	
 var tick_progress := 0.0
+
+var score : int = 0
+var message : String:
+	set(value):
+		message = value
+		queue_redraw()
+
+var default_font : Font = ThemeDB.fallback_font
 
 signal unpaused
 signal tick
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	reset()
+	message = "Press space to start."
+	pause = true
+	# Start
+	on_game_tick()
+
+func reset() -> void:
+	# Set up snake
 	snake = Snake.new()
 	snake.died.connect(on_snake_death.bind(snake))
 	snake.moved.connect(on_snake_moved.bind(snake))
-	snake.changed.connect(draw_game)
-	tick.connect(on_game_tick)
+	snake.changed.connect(queue_redraw)
 	tick.connect(snake.on_game_tick)
+	# Set up grid
+	grid_objects.clear()
 	add_food()
-	on_game_tick()
-	
+	# Set up messages
+	score = 0
+	message = ""
 
-#func _process(delta: float) -> void:
-	#tick_progress += delta
-	#if tick_progress >= tick_length:
-		#tick_progress -= tick_length
-		#tick.emit()
+func _unhandled_input(event: InputEvent) -> void:
+	if not pause:
+		if event.is_action_pressed("move"):
+			snake.input_facing_direction(event)
+	
+	if event.is_action_pressed("pause"):
+		if pause:
+			if not snake.alive:
+				reset()
+			pause = false
+			message = ""
+		else:
+			pause = true
+			message = "Game paused. Press space to resume."
 
 func _draw() -> void:
-	snake.draw(self)
+	draw_grid()
+	draw_messages()
 	for grid_object in grid_objects:
 		grid_object.draw(self)
+	snake.draw(self)
+	
+func draw_grid() -> void:
+	for x in range(GRID_MIN.x - 1, GRID_MAX.x):
+		for y in range(GRID_MIN.y - 1, GRID_MAX.y):
+			var box := Rect2(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE, CELL_SIZE)
+			if (x + y) % 2 == 0:
+				draw_rect(box, GRID_COLOR_1, true)
+			else:
+				draw_rect(box, GRID_COLOR_2, true)
 
-func draw_game() -> void:
-	queue_redraw()
-
-func on_snake_death(_snake : Snake) -> void:
-	pass
+func draw_messages() -> void:
+	var bottom_bound := get_viewport_rect().end.y
+	var right_bound := get_viewport_rect().end.x
+	draw_string(default_font, Vector2(10, 24), "Score = %d" % score, HORIZONTAL_ALIGNMENT_LEFT, 190, 24)
+	draw_string(default_font, Vector2(0, bottom_bound - 12), message, HORIZONTAL_ALIGNMENT_CENTER, right_bound, 24)
 
 func is_every_cell_filled() -> bool:
-	for x in range(GRID_SIZE.x):
-		for y in range(GRID_SIZE.y):
+	for x in range(GRID_MAX.x):
+		for y in range(GRID_MAX.y):
 			if is_cell_empty(Vector2i(x, y)):
 				return false
 	return true
@@ -62,39 +108,60 @@ func is_cell_empty(cell_pos : Vector2i) -> bool:
 	return true
 
 func is_position_valid(pos : Vector2i) -> bool:
-	if pos.x < 0:
+	if pos.x < GRID_MIN.x:
 		return false
-	if pos.y < 0:
+	if pos.y < GRID_MIN.y:
 		return false
-	if pos.x > GRID_SIZE.x:
+	if pos.x > GRID_MAX.x:
 		return false
-	if pos.y > GRID_SIZE.y:
+	if pos.y > GRID_MAX.y:
 		return false
 	return true
 
+func add_grid_object(obj : GridObject) -> void:
+	grid_objects.append(obj)
+	obj.destroyed.connect(remove_grid_object)
+
 func add_food() -> void:
-	var rand_pos := Vector2i(randi_range(0, GRID_SIZE.x - 1), randi_range(0, GRID_SIZE.y - 1))
+	var rand_pos := Vector2i(randi_range(GRID_MIN.x, GRID_MAX.x - 1), randi_range(GRID_MIN.x, GRID_MAX.y - 1))
 	while not is_cell_empty(rand_pos):
-		rand_pos = Vector2i(randi_range(0, GRID_SIZE.x - 1), randi_range(0, GRID_SIZE.y - 1))
+		rand_pos = Vector2i(randi_range(GRID_MIN.x, GRID_MAX.x - 1), randi_range(GRID_MIN.x, GRID_MAX.y - 1))
 	
 	var new_food := Food.new()
 	grid_objects.append(new_food)
 	new_food.grid_position = rand_pos
-	new_food.eaten.connect(on_food_eaten.bind(new_food))
+	new_food.activated.connect(snake.eat.bind(new_food))
+	new_food.activated.connect(on_food_eaten.bind(new_food))
 
 func remove_grid_object(grid_object : GridObject) -> void:
 	grid_objects.erase(grid_object)
 
 func on_food_eaten(food : Food) -> void:
+	score += 1
 	remove_grid_object(food)
 	add_food()
 
 func on_snake_moved(snake : Snake) -> void:
 	if not is_position_valid(snake.head):
 		snake.kill()
+		return
+	for grid_object in grid_objects:
+		if snake.head == grid_object.grid_position:
+			grid_object.activate()
+
+func on_snake_death(_snake : Snake) -> void:
+	message = "You died! Press space to restart."
+	pause = true
+	snake.died.disconnect(on_snake_death)
+	snake.moved.disconnect(on_snake_moved)
+	snake.changed.disconnect(queue_redraw)
+	tick.disconnect(snake.on_game_tick)
 
 func on_game_tick() -> void:
 	if pause:
 		await unpaused
+	else:
+		tick.emit()
 	var timer := get_tree().create_timer(tick_length)
-	timer.timeout.connect(tick.emit)
+	timer.timeout.connect(on_game_tick)
+	queue_redraw()
