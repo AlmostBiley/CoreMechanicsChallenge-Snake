@@ -34,9 +34,11 @@ signal tick
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	reset_game()
+	snake.alive = false
 	message = "Press space to start."
 	pause = true
-	start_game()
+	on_game_tick()
+	#start_game()
 
 func reset_game() -> void:
 	# Set up snake
@@ -47,13 +49,14 @@ func reset_game() -> void:
 	tick.connect(snake.on_game_tick)
 	# Set up grid
 	grid_objects.clear()
-	add_food()
 	# Set up messages
 	score = 0
 	message = ""
 
 func start_game() -> void:
-	on_game_tick()
+	add_food()
+	play_sfx(SFX_STARTGAME)
+	pause = false
 
 func play_sfx(to_play : AudioStream) -> void:
 	stream = to_play
