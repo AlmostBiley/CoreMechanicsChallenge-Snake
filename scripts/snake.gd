@@ -2,6 +2,7 @@ class_name Snake
 extends Resource
 
 const COLOR : Color = Color(0, 0.744, 0.371)
+const HEAD_SIZE : float = SnakeGame.CELL_SIZE * 0.5
 
 var segments : Array[Vector2i] = [Vector2i.ZERO]
 var facing_direction : Vector2i:
@@ -92,8 +93,8 @@ func draw(canvas_item : CanvasItem) -> void:
 
 func draw_head(canvas_item : CanvasItem) -> void:
 	var head_pos := SnakeGame.CELL_SIZE * Vector2(segments[0])
-	var head_tip := head_pos + SnakeGame.CELL_SIZE * 0.5 * Vector2(facing_direction)
-	canvas_item.draw_line(head_pos, head_tip, COLOR, 0.5 * SnakeGame.CELL_SIZE)
+	var rect : Rect2 = Rect2(head_pos.x - HEAD_SIZE / 2, head_pos.y - HEAD_SIZE / 2, HEAD_SIZE, HEAD_SIZE)
+	canvas_item.draw_rect(rect, COLOR)
 
 func draw_body(canvas_item : CanvasItem) -> void:
 	var draw_segments : PackedVector2Array = []

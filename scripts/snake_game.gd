@@ -64,8 +64,9 @@ func start_game() -> void:
 	play_sfx(SFX_STARTGAME)
 	pause = false
 
-func play_sfx(to_play : AudioStream) -> void:
+func play_sfx(to_play : AudioStream, pitch : float = 1.0) -> void:
 	stream = to_play
+	pitch_scale = pitch
 	play()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -104,8 +105,8 @@ func draw_messages() -> void:
 	var bottom_bound := get_viewport_rect().end.y
 	var right_bound := get_viewport_rect().end.x
 	draw_string(FONT_KENNEY_PIXEL, Vector2(10, 24), "SCORE = %d" % score, HORIZONTAL_ALIGNMENT_LEFT, right_bound, 48)
-	draw_string(FONT_KENNEY_PIXEL, Vector2(10, 52), "HIGH SCORE = %d" % score, HORIZONTAL_ALIGNMENT_LEFT, right_bound, 48)
-	draw_string(FONT_KENNEY_PIXEL, Vector2(0, bottom_bound - 12), message.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, right_bound, 48)
+	draw_string(FONT_KENNEY_PIXEL, Vector2(10, 52), "HIGH SCORE = %d" % high_score, HORIZONTAL_ALIGNMENT_LEFT, right_bound, 48)
+	draw_string(FONT_KENNEY_PIXEL, Vector2(0, bottom_bound - 12), message.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, right_bound, 36)
 
 func is_every_cell_filled() -> bool:
 	for x in range(GRID_MAX.x):
@@ -156,8 +157,10 @@ func remove_grid_object(grid_object : GridObject) -> void:
 	grid_objects.erase(grid_object)
 
 func on_food_eaten(food : Food) -> void:
+	# Pitch will increase as score increases
+	var sfx_pitch := 0.8 + 0.03 * score
 	score += 1
-	play_sfx(SFX_PICKUP)
+	play_sfx(SFX_PICKUP, sfx_pitch)
 	remove_grid_object(food)
 	add_food()
 
