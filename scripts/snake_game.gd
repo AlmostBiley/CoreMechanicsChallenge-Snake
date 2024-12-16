@@ -104,8 +104,8 @@ func draw_grid() -> void:
 func draw_messages() -> void:
 	var bottom_bound := get_viewport_rect().end.y
 	var right_bound := get_viewport_rect().end.x
-	draw_string(FONT_KENNEY_PIXEL, Vector2(10, 24), "SCORE = %d" % score, HORIZONTAL_ALIGNMENT_LEFT, right_bound, 48)
-	draw_string(FONT_KENNEY_PIXEL, Vector2(10, 52), "HIGH SCORE = %d" % high_score, HORIZONTAL_ALIGNMENT_LEFT, right_bound, 48)
+	draw_string(FONT_KENNEY_PIXEL, Vector2(10, 30), "SCORE = %d" % score, HORIZONTAL_ALIGNMENT_LEFT, right_bound, 48)
+	draw_string(FONT_KENNEY_PIXEL, Vector2(10, 60), "HIGH SCORE = %d" % high_score, HORIZONTAL_ALIGNMENT_LEFT, right_bound, 48)
 	draw_string(FONT_KENNEY_PIXEL, Vector2(0, bottom_bound - 12), message.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, right_bound, 36)
 
 func is_every_cell_filled() -> bool:
