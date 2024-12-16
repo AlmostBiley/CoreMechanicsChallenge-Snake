@@ -1,12 +1,14 @@
 class_name SnakeGame
-extends Node2D
+extends AudioStreamPlayer2D
 
 const CELL_SIZE : int = 32
 const GRID_MIN : Vector2i = Vector2i(3, 3)
 const GRID_MAX : Vector2i = Vector2i(12, 12)
 const GRID_COLOR_1 := Color(0.352, 0.301, 0.47)
 const GRID_COLOR_2 := Color(0.279, 0.211, 0.39)
-
+const SFX_PICKUP : AudioStream  = preload("res://retro_beeps_collect_item_01.wav")
+const SFX_DEATH : AudioStream = preload("res://retro_jump_dizzy_spin_01.wav")
+const SFX_STARTGAME : AudioStream = preload("res://retro_synth_beeps_04.wav")
 var grid_objects : Array[GridObject] = []
 var snake : Snake
 var tick_length := 0.25
@@ -31,13 +33,12 @@ signal tick
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	reset()
+	reset_game()
 	message = "Press space to start."
 	pause = true
-	# Start
-	on_game_tick()
+	start_game()
 
-func reset() -> void:
+func reset_game() -> void:
 	# Set up snake
 	snake = Snake.new()
 	snake.died.connect(on_snake_death.bind(snake))
@@ -51,6 +52,13 @@ func reset() -> void:
 	score = 0
 	message = ""
 
+func start_game() -> void:
+	on_game_tick()
+
+func play_sfx(to_play : AudioStream) -> void:
+	stream = to_play
+	play()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not pause:
 		if event.is_action_pressed("move"):
@@ -59,7 +67,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
 		if pause:
 			if not snake.alive:
-				reset()
+				reset_game()
+				start_game()
 			pause = false
 			message = ""
 		else:
@@ -138,6 +147,7 @@ func remove_grid_object(grid_object : GridObject) -> void:
 
 func on_food_eaten(food : Food) -> void:
 	score += 1
+	play_sfx(SFX_PICKUP)
 	remove_grid_object(food)
 	add_food()
 
@@ -150,8 +160,12 @@ func on_snake_moved(snake : Snake) -> void:
 			grid_object.activate()
 
 func on_snake_death(_snake : Snake) -> void:
+	# Play death sounds
+	play_sfx(SFX_DEATH)
+	# Prompt player to restart
 	message = "You died! Press space to restart."
 	pause = true
+	# Remove snake
 	snake.died.disconnect(on_snake_death)
 	snake.moved.disconnect(on_snake_moved)
 	snake.changed.disconnect(queue_redraw)
