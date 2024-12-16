@@ -3,12 +3,12 @@
 importer="wav"
 type="AudioStreamWAV"
 uid="uid://cseucwi0nf6un"
-path="res://.godot/imported/retro_beeps_collect_item_01.wav-ca36323dd72359e619150397fc8497f3.sample"
+path="res://.godot/imported/retro_beeps_collect_item_01.wav-b06aa735bd5dbca97c934e335a730022.sample"
 
 [deps]
 
-source_file="res://retro_beeps_collect_item_01.wav"
-dest_files=["res://.godot/imported/retro_beeps_collect_item_01.wav-ca36323dd72359e619150397fc8497f3.sample"]
+source_file="res://audio/retro_beeps_collect_item_01.wav"
+dest_files=["res://.godot/imported/retro_beeps_collect_item_01.wav-b06aa735bd5dbca97c934e335a730022.sample"]
 
 [params]
 

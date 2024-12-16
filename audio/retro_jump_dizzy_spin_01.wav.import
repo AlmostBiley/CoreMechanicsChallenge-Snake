@@ -3,12 +3,12 @@
 importer="wav"
 type="AudioStreamWAV"
 uid="uid://cgme1dgwigim4"
-path="res://.godot/imported/retro_jump_dizzy_spin_01.wav-e748b9dc08dfb4854bce45aa07381b44.sample"
+path="res://.godot/imported/retro_jump_dizzy_spin_01.wav-feafde7005de8e0bafef4bd5f9131435.sample"
 
 [deps]
 
-source_file="res://retro_jump_dizzy_spin_01.wav"
-dest_files=["res://.godot/imported/retro_jump_dizzy_spin_01.wav-e748b9dc08dfb4854bce45aa07381b44.sample"]
+source_file="res://audio/retro_jump_dizzy_spin_01.wav"
+dest_files=["res://.godot/imported/retro_jump_dizzy_spin_01.wav-feafde7005de8e0bafef4bd5f9131435.sample"]
 
 [params]
 
