@@ -6,9 +6,11 @@ const GRID_MIN : Vector2i = Vector2i(3, 3)
 const GRID_MAX : Vector2i = Vector2i(12, 12)
 const GRID_COLOR_1 := Color(0.352, 0.301, 0.47)
 const GRID_COLOR_2 := Color(0.279, 0.211, 0.39)
-const SFX_PICKUP : AudioStream  = preload("res://retro_beeps_collect_item_01.wav")
-const SFX_DEATH : AudioStream = preload("res://retro_jump_dizzy_spin_01.wav")
-const SFX_STARTGAME : AudioStream = preload("res://retro_synth_beeps_04.wav")
+const SFX_PICKUP : AudioStream  = preload("res://audio/retro_beeps_collect_item_01.wav")
+const SFX_DEATH : AudioStream = preload("res://audio/retro_jump_dizzy_spin_01.wav")
+const SFX_STARTGAME : AudioStream = preload("res://audio/retro_synth_beeps_04.wav")
+const FONT_KENNEY_PIXEL : Font = preload("res://Kenney Pixel.ttf")
+
 var grid_objects : Array[GridObject] = []
 var snake : Snake
 var tick_length := 0.25
@@ -19,8 +21,12 @@ var pause : bool:
 			unpaused.emit()
 	
 var tick_progress := 0.0
-
-var score : int = 0
+var score : int = 0:
+	set(value):
+		score = value
+		if score > high_score:
+			high_score = score
+var high_score : int = 0
 var message : String:
 	set(value):
 		message = value
@@ -97,8 +103,9 @@ func draw_grid() -> void:
 func draw_messages() -> void:
 	var bottom_bound := get_viewport_rect().end.y
 	var right_bound := get_viewport_rect().end.x
-	draw_string(default_font, Vector2(10, 24), "Score = %d" % score, HORIZONTAL_ALIGNMENT_LEFT, 190, 24)
-	draw_string(default_font, Vector2(0, bottom_bound - 12), message, HORIZONTAL_ALIGNMENT_CENTER, right_bound, 24)
+	draw_string(FONT_KENNEY_PIXEL, Vector2(10, 24), "SCORE = %d" % score, HORIZONTAL_ALIGNMENT_LEFT, right_bound, 48)
+	draw_string(FONT_KENNEY_PIXEL, Vector2(10, 52), "HIGH SCORE = %d" % score, HORIZONTAL_ALIGNMENT_LEFT, right_bound, 48)
+	draw_string(FONT_KENNEY_PIXEL, Vector2(0, bottom_bound - 12), message.to_upper(), HORIZONTAL_ALIGNMENT_CENTER, right_bound, 48)
 
 func is_every_cell_filled() -> bool:
 	for x in range(GRID_MAX.x):
